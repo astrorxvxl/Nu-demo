@@ -1,4 +1,39 @@
 
+name: Build Nu Demo APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar SDK 35
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
       - name: Organizar arquivos Android
         run: |
           mkdir -p app/src/main/java/com/example/nubankdemo
@@ -9,11 +44,9 @@
               id 'com.android.application'
               id 'org.jetbrains.kotlin.android'
           }
-
           android {
               namespace 'com.example.nubankdemo'
               compileSdk 35
-
               defaultConfig {
                   applicationId 'com.example.nubankdemo'
                   minSdk 23
@@ -23,3 +56,12 @@
               }
           }
           EOF
+
+      - name: Compilar APK
+        run: gradle assembleDebug
+
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NuDemo-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
